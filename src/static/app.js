@@ -4,6 +4,40 @@ document.addEventListener("DOMContentLoaded", () => {
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
 
+  // Function to handle participant deletion
+  async function deleteParticipant(activity, email) {
+    try {
+      const response = await fetch(
+        `/activities/${encodeURIComponent(activity)}/unregister?email=${encodeURIComponent(email)}`,
+        {
+          method: "POST"
+        }
+      );
+
+      if (response.ok) {
+        messageDiv.textContent = "Successfully removed participant";
+        messageDiv.className = "success";
+        // Refresh the activities list
+        fetchActivities();
+      } else {
+        const result = await response.json();
+        messageDiv.textContent = result.detail || "Failed to remove participant";
+        messageDiv.className = "error";
+      }
+
+      messageDiv.classList.remove("hidden");
+      setTimeout(() => {
+        messageDiv.classList.add("hidden");
+      }, 5000);
+
+    } catch (error) {
+      console.error("Error removing participant:", error);
+      messageDiv.textContent = "Failed to remove participant. Please try again.";
+      messageDiv.className = "error";
+      messageDiv.classList.remove("hidden");
+    }
+  }
+
   // Function to fetch activities from API
   async function fetchActivities() {
     try {
@@ -28,7 +62,11 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="participants-header">Current Participants</div>
           <ul class="participants-list">
             ${details.participants.length > 0 
-              ? details.participants.map(email => `<li>${email}</li>`).join('')
+              ? details.participants.map(email => `
+                <li>
+                  ${email}
+                  <span class="delete-participant" onclick="event.stopPropagation(); deleteParticipant('${name}', '${email}')">×</span>
+                </li>`).join('')
               : '<li>No participants yet</li>'
             }
           </ul>
